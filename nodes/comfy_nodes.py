@@ -16,6 +16,7 @@ from dreamo.utils import img2tensor, resize_numpy_image_area, tensor2img
 from tools import BEN2
 from huggingface_hub import login, hf_hub_download
 
+
 try:
     from facexlib.utils.face_restoration_helper import FaceRestoreHelper
 except ImportError:
@@ -33,6 +34,7 @@ class DreamOLoadModelFromLocal:
                 "dreamo_lora": (folder_paths.get_filename_list("loras"), ),
                 "dreamo_cfg_distill": (folder_paths.get_filename_list("loras"), ),
                 "turbo_lora": (["None"] +folder_paths.get_filename_list("loras"), ),
+                "int8": ("BOOLEAN", {"default": False}),
             }
         }
 
@@ -40,7 +42,7 @@ class DreamOLoadModelFromLocal:
     FUNCTION = "load_model"
     CATEGORY = "DreamO"
 
-    def load_model(self, flux_model_path, cpu_offload, dreamo_lora, dreamo_cfg_distill, turbo_lora):
+    def load_model(self, flux_model_path, cpu_offload, dreamo_lora, dreamo_cfg_distill, turbo_lora, int8):
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         # Load DreamO pipeline
         dreamo_pipeline = DreamOPipeline.from_pretrained(flux_model_path, torch_dtype=torch.bfloat16)
@@ -48,6 +50,13 @@ class DreamOLoadModelFromLocal:
         dreamo_cfg_distill_path = folder_paths.get_full_path("loras", dreamo_cfg_distill)
         turbo_lora_path = folder_paths.get_full_path("loras", turbo_lora) if turbo_lora != "None" else None
         dreamo_pipeline.load_dreamo_model(device, dreamo_lora_path, dreamo_cfg_distill_path, turbo_lora_path)
+        if int8:
+            from optimum.quanto import freeze, qint8, quantize
+            quantize(dreamo_pipeline.transformer, qint8)
+            freeze(dreamo_pipeline.transformer)
+            quantize(dreamo_pipeline.text_encoder_2, qint8)
+            freeze(dreamo_pipeline.text_encoder_2)
+            print('done quantize')
         if cpu_offload:
             dreamo_pipeline.enable_sequential_cpu_offload()
         else:
@@ -66,6 +75,7 @@ class DreamOLoadModel:
                 "dreamo_lora": (folder_paths.get_filename_list("loras"), ),
                 "dreamo_cfg_distill": (folder_paths.get_filename_list("loras"), ),
                 "turbo_lora": (["None"] +folder_paths.get_filename_list("loras"), ),
+                "int8": ("BOOLEAN", {"default": False}),
             }
         }
 
@@ -73,7 +83,7 @@ class DreamOLoadModel:
     FUNCTION = "load_model"
     CATEGORY = "DreamO"
 
-    def load_model(self, hf_token, cpu_offload, dreamo_lora, dreamo_cfg_distill, turbo_lora):
+    def load_model(self, hf_token, cpu_offload, dreamo_lora, dreamo_cfg_distill, turbo_lora, int8):
         login(token=hf_token)
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         # Load DreamO pipeline
@@ -84,6 +94,13 @@ class DreamOLoadModel:
         dreamo_cfg_distill_path = folder_paths.get_full_path("loras", dreamo_cfg_distill)
         turbo_lora_path = folder_paths.get_full_path("loras", turbo_lora) if turbo_lora != "None" else None
         dreamo_pipeline.load_dreamo_model(device, dreamo_lora_path, dreamo_cfg_distill_path, turbo_lora_path)
+        if int8:
+            from optimum.quanto import freeze, qint8, quantize
+            quantize(dreamo_pipeline.transformer, qint8)
+            freeze(dreamo_pipeline.transformer)
+            quantize(dreamo_pipeline.text_encoder_2, qint8)
+            freeze(dreamo_pipeline.text_encoder_2)
+            print('done quantize')
         if cpu_offload:
             dreamo_pipeline.enable_sequential_cpu_offload()
         else:

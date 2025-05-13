@@ -10,4 +10,5 @@ sentencepiece
 transformers
 timm
 opencv-python
+optimum-quanto==0.2.7
 git+https://github.com/ToTheBeginning/facexlib.git
