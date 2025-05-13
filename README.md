@@ -37,5 +37,4 @@ ID (face) + IP  reference
 
 ## online run:
 
-https://www.comfyonline.app/machine_manager (DreamO Template)
-
+https://www.comfyonline.app/explore/app/dreamo-image-generate
