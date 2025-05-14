@@ -1,40 +1,22 @@
-# ComfyUI-DreamO
+# ComfyUI-DreamO-NF4
 
-https://github.com/bytedance/DreamO
-ComfyUI Warpper
+Wrapper for [bytedance's DreamO](https://github.com/bytedance/DreamO) in ComfyUI.
 
-Note:
-This only a warpper. if you need full native comfyui impl. you can find other.
+NF4 version is a simple fix that skips the 4–5 minute quantization startup time in the original version.  
+It runs on 24GB VRAM.
 
+### Download models:
+```bash
+huggingface-cli download black-forest-labs/FLUX.1-dev --local-dir models/checkpoints/FLUX.1-dev --exclude "flux1-dev.safetensors"
 
-open offload can run on low vram, no open offload need 40GB.
+huggingface-cli download priyesh17/FLUX.1-dev_Quantized_nf4 --local-dir models/checkpoints/FLUX.1-dev_Quantized_nf4
 
-Flux model auto download to models/diffusers
+wget -O models/loras/dreamo.safetensors "https://huggingface.co/ByteDance/DreamO/resolve/main/dreamo.safetensors?download=true"
 
-lora need to download to models/lora
+wget -O models/loras/dreamo_cfg_distill.safetensors "https://huggingface.co/ByteDance/DreamO/resolve/main/dreamo_cfg_distill.safetensors?download=true"
 
-lora:
-https://huggingface.co/ByteDance/DreamO/tree/main
+wget -O models/loras/FLUX.1-Turbo-Alpha.safetensors "https://huggingface.co/alimama-creative/FLUX.1-Turbo-Alpha/resolve/main/diffusion_pytorch_model.safetensors?download=true"
+```
 
+![show](./assets/show_1.jpg)
 
-
-IP reference (subject)
-
-![show](./assets/show_1.png)
-
-
-style reference 
-
-note: prompt need add "generate a same style image."
-
-![show](./assets/show_2.png)
-
-
-ID (face) + IP  reference
-
-![show](./assets/show_3.png)
-
-
-## online run:
-
-https://www.comfyonline.app/explore/app/dreamo-image-generate

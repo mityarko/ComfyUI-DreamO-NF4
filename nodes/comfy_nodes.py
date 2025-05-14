@@ -11,6 +11,9 @@ import cv2
 # Add the parent directory to the Python path so we can import from easycontrol
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from diffusers import DiffusionPipeline, FluxTransformer2DModel
+from transformers import T5EncoderModel
+
 from dreamo.dreamo_pipeline import DreamOPipeline
 from dreamo.utils import img2tensor, resize_numpy_image_area, tensor2img
 from tools import BEN2
@@ -29,12 +32,14 @@ class DreamOLoadModelFromLocal:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "flux_model_path": ("STRING", {"default": "", "tooltip": ""}),
+                "flux_model_path": ("STRING", {"default": "models/checkpoints/FLUX.1-dev", "tooltip": ""}),
                 "cpu_offload": ("BOOLEAN", {"default": False}),
                 "dreamo_lora": (folder_paths.get_filename_list("loras"), ),
                 "dreamo_cfg_distill": (folder_paths.get_filename_list("loras"), ),
                 "turbo_lora": (["None"] +folder_paths.get_filename_list("loras"), ),
                 "int8": ("BOOLEAN", {"default": False}),
+                "use_nf4": ("BOOLEAN", {"default": False}),
+                "nf4_path": ("STRING", {"default": "models/checkpoints/FLUX.1-dev_Quantized_nf4", "tooltip": "GGUF模型路径，如果使用GGUF模型则需填写"}),
             }
         }
 
@@ -42,10 +47,31 @@ class DreamOLoadModelFromLocal:
     FUNCTION = "load_model"
     CATEGORY = "DreamO"
 
-    def load_model(self, flux_model_path, cpu_offload, dreamo_lora, dreamo_cfg_distill, turbo_lora, int8):
+    def load_model(self, flux_model_path, cpu_offload, dreamo_lora, dreamo_cfg_distill, turbo_lora, int8, use_nf4, nf4_path):
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         # Load DreamO pipeline
-        dreamo_pipeline = DreamOPipeline.from_pretrained(flux_model_path, torch_dtype=torch.bfloat16)
+        # dreamo_pipeline = DreamOPipeline.from_pretrained(flux_model_path, torch_dtype=torch.bfloat16)
+        orig_dreamo_pipeline = DreamOPipeline.from_pretrained(flux_model_path, torch_dtype=torch.bfloat16)
+
+        if use_nf4 and nf4_path:
+            print("Using four bit.")
+            transformer = FluxTransformer2DModel.from_pretrained(
+                nf4_path, subfolder="transformer", torch_dtype=torch.bfloat16
+            )
+            text_encoder_2 = T5EncoderModel.from_pretrained(
+                nf4_path, subfolder="text_encoder_2", torch_dtype=torch.bfloat16
+            )
+            dreamo_pipeline = DreamOPipeline.from_pipe(
+                orig_dreamo_pipeline, transformer=transformer, text_encoder_2=text_encoder_2, torch_dtype=torch.bfloat16
+            )
+        else:
+            transformer = FluxTransformer2DModel.from_pretrained(
+                flux_model_path,
+                subfolder="transformer",
+                torch_dtype=torch.bfloat16,
+            )
+            dreamo_pipeline = DreamOPipeline.from_pipe(orig_dreamo_pipeline, transformer=transformer, torch_dtype=torch.bfloat16)
+
         dreamo_lora_path = folder_paths.get_full_path("loras", dreamo_lora)
         dreamo_cfg_distill_path = folder_paths.get_full_path("loras", dreamo_cfg_distill)
         turbo_lora_path = folder_paths.get_full_path("loras", turbo_lora) if turbo_lora != "None" else None
@@ -89,7 +115,9 @@ class DreamOLoadModel:
         # Load DreamO pipeline
         model_root = 'black-forest-labs/FLUX.1-dev'
         cache_dir = folder_paths.get_folder_paths("diffusers")[0]
+
         dreamo_pipeline = DreamOPipeline.from_pretrained(model_root, torch_dtype=torch.bfloat16, cache_dir=cache_dir)
+
         dreamo_lora_path = folder_paths.get_full_path("loras", dreamo_lora)
         dreamo_cfg_distill_path = folder_paths.get_full_path("loras", dreamo_cfg_distill)
         turbo_lora_path = folder_paths.get_full_path("loras", turbo_lora) if turbo_lora != "None" else None
