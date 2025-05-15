@@ -37,6 +37,8 @@ class DreamOLoadModelFromLocal:
                 "dreamo_lora": (folder_paths.get_filename_list("loras"), ),
                 "dreamo_cfg_distill": (folder_paths.get_filename_list("loras"), ),
                 "turbo_lora": (["None"] +folder_paths.get_filename_list("loras"), ),
+                "quality_lora_pos": (["None"] + folder_paths.get_filename_list("loras"), {"tooltip": "Optional positive quality LoRA (e.g., dreamo_quality_lora_pos.safetensors)"}),
+                "quality_lora_neg": (["None"] + folder_paths.get_filename_list("loras"), {"tooltip": "Optional negative quality LoRA (e.g., dreamo_quality_lora_neg.safetensors)"}),
                 "int8": ("BOOLEAN", {"default": False}),
                 "use_nf4": ("BOOLEAN", {"default": False}),
                 "nf4_path": ("STRING", {"default": "models/checkpoints/FLUX.1-dev_Quantized_nf4", "tooltip": "GGUF模型路径，如果使用GGUF模型则需填写"}),
@@ -47,7 +49,7 @@ class DreamOLoadModelFromLocal:
     FUNCTION = "load_model"
     CATEGORY = "DreamO"
 
-    def load_model(self, flux_model_path, cpu_offload, dreamo_lora, dreamo_cfg_distill, turbo_lora, int8, use_nf4, nf4_path):
+    def load_model(self, flux_model_path, cpu_offload, dreamo_lora, dreamo_cfg_distill, turbo_lora, quality_lora_pos, quality_lora_neg, int8, use_nf4, nf4_path):
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         # Load DreamO pipeline
         # dreamo_pipeline = DreamOPipeline.from_pretrained(flux_model_path, torch_dtype=torch.bfloat16)
@@ -75,7 +77,9 @@ class DreamOLoadModelFromLocal:
         dreamo_lora_path = folder_paths.get_full_path("loras", dreamo_lora)
         dreamo_cfg_distill_path = folder_paths.get_full_path("loras", dreamo_cfg_distill)
         turbo_lora_path = folder_paths.get_full_path("loras", turbo_lora) if turbo_lora != "None" else None
-        dreamo_pipeline.load_dreamo_model(device, dreamo_lora_path, dreamo_cfg_distill_path, turbo_lora_path)
+        quality_lora_pos_path = folder_paths.get_full_path("loras", quality_lora_pos) if quality_lora_pos != "None" else None
+        quality_lora_neg_path = folder_paths.get_full_path("loras", quality_lora_neg) if quality_lora_neg != "None" else None
+        dreamo_pipeline.load_dreamo_model(device, dreamo_lora_path, dreamo_cfg_distill_path, turbo_lora_path, quality_lora_pos_path, quality_lora_neg_path)
         if int8:
             from optimum.quanto import freeze, qint8, quantize
             quantize(dreamo_pipeline.transformer, qint8)

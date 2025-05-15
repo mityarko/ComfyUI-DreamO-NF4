@@ -12,8 +12,9 @@ huggingface-cli download black-forest-labs/FLUX.1-dev --local-dir models/checkpo
 huggingface-cli download priyesh17/FLUX.1-dev_Quantized_nf4 --local-dir models/checkpoints/FLUX.1-dev_Quantized_nf4
 
 wget -O models/loras/dreamo.safetensors "https://huggingface.co/ByteDance/DreamO/resolve/main/dreamo.safetensors?download=true"
-
 wget -O models/loras/dreamo_cfg_distill.safetensors "https://huggingface.co/ByteDance/DreamO/resolve/main/dreamo_cfg_distill.safetensors?download=true"
+wget -O models/loras/dreamo_quality_lora_neg.safetensors "https://huggingface.co/ByteDance/DreamO/resolve/main/dreamo_quality_lora_neg.safetensors?download=true"
+wget -O models/loras/dreamo_quality_lora_pos.safetensors "https://huggingface.co/ByteDance/DreamO/resolve/main/dreamo_quality_lora_pos.safetensors?download=true"
 
 wget -O models/loras/FLUX.1-Turbo-Alpha.safetensors "https://huggingface.co/alimama-creative/FLUX.1-Turbo-Alpha/resolve/main/diffusion_pytorch_model.safetensors?download=true"
 ```
